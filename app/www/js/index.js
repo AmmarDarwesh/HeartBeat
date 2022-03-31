@@ -7,9 +7,10 @@
 document.addEventListener('deviceready', onDeviceReady, false)
 document.getElementById('buttonStart').onclick = startCapture
 document.getElementById('buttonStop').onclick = stopCapture
-var globalFileEntry
-var timeStamp = 0
-
+let globalFileEntry
+let startTimeStamp = 0
+let accx, accy, accz
+let accGx, accGy, accGz
 
 /*  Variable 'options' sets the options for the CanvasCameraPlugin.
 * Creates timestamp before image is drawn in "onBeforeDraw".
@@ -27,7 +28,7 @@ var options = {
     flashMode: true,
     use: 'data',     //Needs to be 'data', 'file' didn't work for IOS devices.
     onBeforeDraw: function (frame) {
-        timeStamp = Date.now()
+        startTimeStamp = Date.now()
     },
     onAfterDraw: function (frame) {
         let lum = getLuminosity(frame.element.getContext('2d'))
@@ -88,6 +89,11 @@ async function startCapture () {
     await createFile()
 
     return new Promise((resolve, reject) => {
+        if (typeof (DeviceMotionEvent.requestPermission) === 'function') {
+            await DeviceMotionEvent.requestPermission()
+        }
+        window.addEventListener('devicemotion', motionHandler, false)
+
         CanvasCamera.start(options, reject, function (data) {
             window.plugin.CanvasCamera.flashMode(true) //Flashlight would not stay on when IOS device was used. Quickfix.
             resolve()
@@ -100,8 +106,18 @@ async function startCapture () {
 */
 async function stopCapture () {
     return new Promise((resolve, reject) => {
+        window.removeEventListener('devicemotion', motionHandler)
         window.plugin.CanvasCamera.stop(reject, resolve)
     })
+}
+
+function motionHandler (event) {
+    accx = event.acceleration.x
+    accy = event.acceleration.y
+    accz = event.acceleration.z
+    accGx = event.accelerationIncludingGravity.x
+    accGy = event.accelerationIncludingGravity.y
+    accGz = event.accelerationIncludingGravity.z
 }
 
 
