@@ -1,8 +1,8 @@
 {
   "name": "se.mau.iotap.heartbeat",
   "displayName": "HeartBeat",
-  "version": "1.0.0",
-  "description": "A sample Apache Cordova application that responds to the deviceready event.",
+  "version": "0.0.1",
+  "description": "Simple app to record ppg and acceleration",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,17 +10,21 @@
   "keywords": [
     "ecosystem:cordova"
   ],
-  "author": "Apache Cordova Team",
-  "license": "Apache-2.0",
+  "author": "Dario Salvi",
+  "license": "MIT",
   "devDependencies": {
     "com.virtuoworks.cordova-plugin-canvascamera": "github:VirtuoWorks/CanvasCameraPlugin",
     "cordova-android": "^10.1.1",
     "cordova-ios": "^6.2.0",
-    "cordova-plugin-compat": "^1.2.0"
+    "cordova-plugin-compat": "^1.2.0",
+    "cordova-plugin-device": "^2.0.3",
+    "cordova-plugin-file": "^6.0.2"
   },
   "cordova": {
     "plugins": {
-      "com.virtuoworks.cordova-plugin-canvascamera": {}
+      "com.virtuoworks.cordova-plugin-canvascamera": {},
+      "cordova-plugin-device": {},
+      "cordova-plugin-file": {}
     },
     "platforms": [
       "android",
