@@ -11,5 +11,20 @@
     "ecosystem:cordova"
   ],
   "author": "Apache Cordova Team",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "com.virtuoworks.cordova-plugin-canvascamera": "github:VirtuoWorks/CanvasCameraPlugin",
+    "cordova-android": "^10.1.1",
+    "cordova-ios": "^6.2.0",
+    "cordova-plugin-compat": "^1.2.0"
+  },
+  "cordova": {
+    "plugins": {
+      "com.virtuoworks.cordova-plugin-canvascamera": {}
+    },
+    "platforms": [
+      "android",
+      "ios"
+    ]
+  }
 }
