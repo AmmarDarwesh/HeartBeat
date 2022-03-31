@@ -106,7 +106,9 @@ async function startCapture () {
             if (data && data.output && data.output.images && data.output.images.fullsize) {
                 frameTimeStamp = data.output.images.fullsize.timestamp
             }
-            // if (USE_FLASH) window.plugin.CanvasCamera.flashMode(true) //Flashlight would not stay on when IOS device was used. Quickfix.
+            if (USE_FLASH && (device.platform == "iOS")) {
+                window.plugin.CanvasCamera.flashMode(true) //Flashlight would not stay on when IOS device was used. Quickfix.
+            }
             if (!started) {
                 started = true
                 resolve()
