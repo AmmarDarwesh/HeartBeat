@@ -4,16 +4,16 @@
     CordovaDevice
     CordovaFile
 */
-document.addEventListener('deviceready', onDeviceReady, false);
-document.getElementById("buttonStart").onclick = startFileCreation;
-document.getElementById("buttonStop").onclick = stopCamera;
-var globalFileEntry = "";
-var timeStamp = 0;
+document.addEventListener('deviceready', onDeviceReady, false)
+document.getElementById('buttonStart').onclick = startCapture
+document.getElementById('buttonStop').onclick = stopCapture
+var globalFileEntry
+var timeStamp = 0
 
 
 /*  Variable 'options' sets the options for the CanvasCameraPlugin.
-Creates timestamp before image is drawn in "onBeforeDraw".
-Calculates the RGB values after image is drawn in "onAfterDraw".
+* Creates timestamp before image is drawn in "onBeforeDraw".
+* Calculates the RGB values after image is drawn in "onAfterDraw".
  */
 var options = {
     CameraFacing: "back",
@@ -27,157 +27,146 @@ var options = {
     flashMode: true,
     use: 'data',     //Needs to be 'data', 'file' didn't work for IOS devices.
     onBeforeDraw: function (frame) {
-        timeStamp = Date.now();
+        timeStamp = Date.now()
     },
     onAfterDraw: function (frame) {
-        getAverageRGB(frame.element.getContext("2d"));
+        let lum = getLuminosity(frame.element.getContext('2d'))
+        let line = lum + " " + Date.now() + "\n"
+        appendToFile(line)
     }
 };
 
 /* 
-    Initializes CordovaCameraPlugin when device is ready
+* Initializes CordovaCameraPlugin when device is ready
 */
 function onDeviceReady () {
-    console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
-    document.getElementById('deviceready').classList.add('ready');
-    var objcanvas = document.getElementById("canvas");
-    window.plugin.CanvasCamera.initialize(objcanvas);
+    console.log('Running cordova-' + cordova.platformId + '@' + cordova.version)
+    var objcanvas = document.getElementById("canvas")
+    window.plugin.CanvasCamera.initialize(objcanvas)
 }
 
 /* 
-    Start when the "startButton" is pressed on the GUI. Finds the type of device and locate the right storage location for the device.
+* Finds the type of device and locate the right storage location for the device.
 */
-function startFileCreation () {
-    var storageLocation = "";
-    if (window.cordova && cordova.platformId !== "browser") {
-        switch (device.platform) {
-            case "Android":
-                console.log("Android");
-                storageLocation = cordova.file.externalDataDirectory;
-                break;
-            case "iOS":
-                console.log("IOS");
-                storageLocation = cordova.file.documentsDirectory;
-                break;
-        }
-
-        var folderPath = storageLocation;
-        window.resolveLocalFileSystemURL(folderPath, function (dirEntry) {
-            console.log('file system open: ' + dirEntry.name);
-            var tempName = Date.now(); //Name of the file
-            console.log(tempName);
-            createFile(dirEntry, tempName + ".txt");
-            startCamera();
-        }, function (err) {
-            console.error(err);
-        });
-
+async function createFile () {
+    var storageLocation = '';
+    switch (device.platform) {
+        case "Android":
+            console.log("Android");
+            storageLocation = cordova.file.externalDataDirectory
+            break
+        case "iOS":
+            console.log("IOS");
+            storageLocation = cordova.file.documentsDirectory
+            break
+        default:
+            throw new Error('Platform must be android or ios')
     }
-}
-/* 
-    Creates a permanent file on the device.
-*/
 
-function createFile (dirEntry, fileName) {
-    console.log(fileName);
-    dirEntry.getFile(fileName, { create: true, exclusive: false }, function (fileEntry) {
-        globalFileEntry = fileEntry;
-        console.log(fileEntry);
-        console.log("I create file");
-    }, function (err) {
-        console.error(err);
-    });
+    var folderPath = storageLocation
 
-}
-
-
-/* 
-    Start the CanvasCameraPlugin capturing.
-*/
-function startCamera () {
-    console.log("I start camera")
-
-    CanvasCamera.start(options, function (err) {
-        console.error(err);
-
-    }, function (data) {
-        window.plugin.CanvasCamera.flashMode(true); //Flashlight would not stay on when IOS device was used. Quickfix.
-
-    });
-}
-
-/* 
-    Stops the CanvasCameraPlugin capturing.
-*/
-function stopCamera () {
-    window.plugin.CanvasCamera.stop(function (error) {
-        console.log('[CanvasCamera stop]', 'error', error);
-    }, function (data) {
-        console.log('[CanvasCamera stop]', 'data', data);
-    });
+    return new Promise((resolve, reject) => {
+        window.resolveLocalFileSystemURL(folderPath, function (dirEntry) {
+            console.log('file system open: ' + dirEntry.name)
+            var tempName = Date.now() + '.csv' //Name of the file
+            dirEntry.getFile(tempName, { create: true, exclusive: false }, function (fileEntry) {
+                console.log("file created", tempName)
+                globalFileEntry = fileEntry
+            }, reject)
+            resolve()
+        }, reject)
+    })
 }
 
 
 /* 
-    Writes to the created file.
+* Start capturing data.
 */
-function writeFile (dataObj) {
-    var isAppend = true;
-    globalFileEntry.createWriter(function (fileWriter) {
+async function startCapture () {
+    console.log("Starting capture")
 
-        fileWriter.onerror = function (e) {
-            console.log("Failed file read: " + e.toString());
-        };
+    await createFile()
 
-        if (isAppend) {
+    return new Promise((resolve, reject) => {
+        CanvasCamera.start(options, reject, function (data) {
+            window.plugin.CanvasCamera.flashMode(true) //Flashlight would not stay on when IOS device was used. Quickfix.
+            resolve()
+        })
+    })
+}
+
+/* 
+* Stops the capturing.
+*/
+async function stopCapture () {
+    return new Promise((resolve, reject) => {
+        window.plugin.CanvasCamera.stop(reject, resolve)
+    })
+}
+
+
+/* 
+* Appends a text line to the created file.
+*/
+async function appendToFile (line) {
+    return new Promise((resolve, reject) => {
+        dataObj = new Blob([line], { type: 'text/plain' })
+
+        globalFileEntry.createWriter(function (fileWriter) {
+
+            fileWriter.onerror = reject
+            fileWriter.onwriteend = resolve
             try {
-                fileWriter.seek(fileWriter.length);
+                fileWriter.seek(fileWriter.length)
             }
             catch (e) {
-                console.log("file doesn't exist!");
+                console.error('file doesnt exist!')
+                reject()
             }
-        }
-        fileWriter.write(dataObj);
-    });
+            fileWriter.write(dataObj)
+        })
+    })
 }
 
 /* 
-    Reads from the created file.
+* Reads from the created file. Currently not used.
 */
-function readFile () { //Currently not used.
+function readFile () {
 
     globalFileEntry.file(function (file) {
         var reader = new FileReader();
 
         reader.onloadend = function () {
-            /*         console.log("Successful file read: " + this.result); */
+            console.log("Successful file read: " + this.result)
             //displayFileData(globalFileEntry.fullPath + ": " + this.result);
         };
 
-        reader.readAsText(file);
-    }, console.log("Fel vid läsningen av fil"));
+        reader.readAsText(file)
+    }, (err) => {
+        console.error('Error while writing file', err)
+    })
 }
 
 /* 
-    Gets the imageData from the drawn frame and calculates all the RGB values into a single values.
+* Gets the imageData from the drawn frame and calculates all the RGB values into a single values.
 */
-function getAverageRGB (frameElement) {
-    let R = 0;
-    let G = 0;
-    let B = 0;
-    let count = 0;
-    imgData = frameElement.getImageData(0, 0, 350, 350);
-    let arr = imgData.data;
-    let length = imgData.data.length;
-    let avg = 0;
+function getLuminosity (frameElement) {
+    let R = 0
+    let G = 0
+    let B = 0
+    let count = 0
+    imgData = frameElement.getImageData(0, 0, 350, 350)
+    let arr = imgData.data
+    let length = imgData.data.length
+    let avg = 0
     for (let i = 0; i < length; i += 4) {
-        count++;
-        R = arr[i] * 0.299;
-        G = arr[i + 1] * 0.587;
-        B = arr[i + 2] * 0.114;
-        avg += R + G + B;
+        count++
+        // transform to luminance
+        R = arr[i] * 0.299
+        G = arr[i + 1] * 0.587
+        B = arr[i + 2] * 0.114
+        avg += (R + G + B)
     }
-    avg = avg / count;
-    dataObj = new Blob([avg + " " + timeStamp + "\n"], { type: 'text/plain' });
-    writeFile(dataObj);
+    avg = avg / count
+    return avg
 }
