@@ -15,6 +15,8 @@ let accGx, accGy, accGz
 let USE_FLASH = true
 let started = false
 
+let ppgLogger
+
 /* 
 * Variable 'options' sets the options for the CanvasCameraPlugin.
 */
@@ -33,7 +35,7 @@ var options = {
         let lum = getLuminosity(frame.element.getContext('2d'))
         let ts = frameTimeStamp - startTimeStamp
         let line = ts + ', ' + lum + ', ' + accx + ', ' + accy + ', ' + accz + ', ' + accGx + ', ' + accGy + ', ' + accGz + '\n'
-        await appendToFile(line)
+        await ppgLogger.log(line)
     },
     onAfterDraw: async function (frame) {
 
@@ -49,38 +51,6 @@ function onDeviceReady () {
     window.plugin.CanvasCamera.initialize(objcanvas)
 }
 
-/* 
-* Finds the type of device and locate the right storage location for the device.
-*/
-async function createFile () {
-    var storageLocation = '';
-    switch (device.platform) {
-        case "Android":
-            console.log("Android");
-            storageLocation = cordova.file.externalDataDirectory
-            break
-        case "iOS":
-            console.log("IOS");
-            storageLocation = cordova.file.documentsDirectory
-            break
-        default:
-            throw new Error('Platform must be android or ios')
-    }
-
-    var folderPath = storageLocation
-
-    return new Promise((resolve, reject) => {
-        window.resolveLocalFileSystemURL(folderPath, function (dirEntry) {
-            var tempName = Date.now() + '.csv' //Name of the file
-            dirEntry.getFile(tempName, { create: true, exclusive: false }, function (fileEntry) {
-                console.log("file created", tempName)
-                globalFileEntry = fileEntry
-                resolve()
-            }, reject)
-        }, reject)
-    })
-}
-
 
 /* 
 * Start capturing data.
@@ -90,11 +60,12 @@ async function startCapture () {
 
     console.log("Starting capture")
 
-    await createFile()
-    let line = 'timestamp , luminance, accX, accY , accZ, accXwithG, accYwithG, accZwithG\n'
-    await appendToFile(line)
-
     startTimeStamp = Date.now()
+
+    ppgLogger = new Logger(startTimeStamp + '_ppg.csv')
+    await ppgLogger.create()
+    let line = 'timestamp , luminance, accX, accY , accZ, accXwithG, accYwithG, accZwithG\n'
+    await ppgLogger.log(line)
 
     return new Promise(async (resolve, reject) => {
         if (typeof (DeviceMotionEvent.requestPermission) === 'function') {
@@ -142,48 +113,6 @@ function motionHandler (event) {
     accGz = event.accelerationIncludingGravity.z.toFixed(4)
 }
 
-
-/* 
-* Appends a text line to the created file.
-*/
-async function appendToFile (line) {
-    return new Promise((resolve, reject) => {
-        dataObj = new Blob([line], { type: 'text/plain' })
-
-        globalFileEntry.createWriter(function (fileWriter) {
-
-            fileWriter.onerror = reject
-            fileWriter.onwriteend = resolve
-            try {
-                fileWriter.seek(fileWriter.length)
-            }
-            catch (e) {
-                console.error('file doesnt exist!')
-                reject()
-            }
-            fileWriter.write(dataObj)
-        })
-    })
-}
-
-/* 
-* Reads from the created file. Currently not used.
-*/
-function readFile () {
-
-    globalFileEntry.file(function (file) {
-        var reader = new FileReader();
-
-        reader.onloadend = function () {
-            console.log("Successful file read: " + this.result)
-            //displayFileData(globalFileEntry.fullPath + ": " + this.result);
-        };
-
-        reader.readAsText(file)
-    }, (err) => {
-        console.error('Error while writing file', err)
-    })
-}
 
 /* 
 * Gets the imageData from the drawn frame and calculates all the RGB values into a single values.
