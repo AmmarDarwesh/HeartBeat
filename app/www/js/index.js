@@ -1,4 +1,4 @@
-/* 
+/*
     Plugins needed:
     CordovaCameraPlugin
     CordovaDevice
@@ -17,7 +17,7 @@ let started = false
 
 let ppgLogger
 
-/* 
+/*
 * Variable 'options' sets the options for the CanvasCameraPlugin.
 */
 var options = {
@@ -32,17 +32,17 @@ var options = {
     flashMode: USE_FLASH,
     use: 'data',     //Needs to be 'data', 'file' didn't work for IOS devices.
     onBeforeDraw: async function (frame) {
-        let lum = getLuminosity(frame.element.getContext('2d'))
-        let ts = frameTimeStamp - startTimeStamp
-        let line = ts + ', ' + lum + ', ' + accx + ', ' + accy + ', ' + accz + ', ' + accGx + ', ' + accGy + ', ' + accGz + '\n'
-        await ppgLogger.log(line)
+
     },
     onAfterDraw: async function (frame) {
-
+      let lum = getLuminosity(frame.element.getContext("2d"))
+      let ts = frameTimeStamp - startTimeStamp
+      let line = ts + ', ' + lum + ', ' + accx + ', ' + accy + ', ' + accz + ', ' + accGx + ', ' + accGy + ', ' + accGz + '\n'
+      await ppgLogger.log(line)
     }
 };
 
-/* 
+/*
 * Initializes CordovaCameraPlugin when device is ready
 */
 function onDeviceReady () {
@@ -52,7 +52,7 @@ function onDeviceReady () {
 }
 
 
-/* 
+/*
 * Start capturing data.
 */
 async function startCapture () {
@@ -88,7 +88,7 @@ async function startCapture () {
     })
 }
 
-/* 
+/*
 * Stops the capturing.
 */
 async function stopCapture () {
@@ -114,7 +114,7 @@ function motionHandler (event) {
 }
 
 
-/* 
+/*
 * Gets the imageData from the drawn frame and calculates all the RGB values into a single values.
 */
 function getLuminosity (frameElement) {
