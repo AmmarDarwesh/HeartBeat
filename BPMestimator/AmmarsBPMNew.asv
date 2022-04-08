@@ -30,22 +30,10 @@ b  = firpm(N, [0 Fstop1 Fpass1 Fpass2 Fstop2 Fs/2]/(Fs/2), [0 0 1 1 0 ...
 Hd = dfilt.dffir(b);
 filteredSignal = filter(Hd,PPGsignals); %filters the signal
 
+allAccValues = zeros(length(accX),1);
 
-% Counting mean i f
-% accXMean = 0;
-% accYMean = 0;
-% accZMean = 0;
-% 
-% for i= 1:length(accX)
-%     
-%     accXMean = accXMean + accX(i);
-%     accYMean = accYMean + accY(i);
-%     accZMean = accZMean + accZ(i);
-%     
-% end
-
-
-
+for i = 1:length(accX)
+    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%PAST THESIS AUTOCORRELATION METHOD%%%%%%%%%%%%%%%%%%%%%%%
 

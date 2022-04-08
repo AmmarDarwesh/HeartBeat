@@ -30,7 +30,13 @@ b  = firpm(N, [0 Fstop1 Fpass1 Fpass2 Fstop2 Fs/2]/(Fs/2), [0 0 1 1 0 ...
 Hd = dfilt.dffir(b);
 filteredSignal = filter(Hd,PPGsignals); %filters the signal
 
+a = zeros(length(accX),1);
 
+for n = 1:length(accX)
+    
+    a(n) = sqrt(accX(n)^2+accY(n)^2+accZ(n)^2);
+    
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%PAST THESIS AUTOCORRELATION METHOD%%%%%%%%%%%%%%%%%%%%%%%
 
